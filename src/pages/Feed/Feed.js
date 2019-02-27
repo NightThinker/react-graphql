@@ -56,26 +56,50 @@ class Feed extends Component {
       page--;
       this.setState({ postPage: page });
     }
-    fetch('http://localhost:8080/feed/posts?page=' + page, {
+    const graphqlQuery = {
+      query: `
+        {
+          posts {
+            posts {
+              _id
+              title
+              content
+              creator {
+                name
+              }
+              createdAt
+            }
+            totalPosts
+          }
+        }
+      `
+    }
+    fetch('http://localhost:8080/graphql', {
+      method: 'POST',
+      body: JSON.stringify(graphqlQuery),
       headers: {
-        Authorization: 'Bearer ' + this.props.token
+        Authorization: 'Bearer ' + this.props.token,
+        'Content-Type': 'application/json'
       }
     })
       .then(res => {
-        if (res.status !== 200) {
-          throw new Error('Failed to fetch posts.');
-        }
         return res.json();
       })
       .then(resData => {
+				console.log('TCL: Feed -> resData', resData)
+        if (resData.errors) {
+          throw new Error(
+            "Fetching posts failed!"
+          );
+        }
         this.setState({
-          posts: resData.posts.map(post => {
+          posts: resData.data.posts.posts.map(post => {
             return {
               ...post,
               imagePath: post.imageUrl
             };
           }),
-          totalPosts: resData.totalItems,
+          totalPosts: resData.data.posts.totalPosts,
           postsLoading: false
         });
       })
@@ -185,7 +209,15 @@ class Feed extends Component {
           createdAt: resData.data.createPost.createdAt
         };
         this.setState(prevState => {
+          let updatedPosts = [...prevState.posts]
+          if (prevState.editPost) {
+            const postIndex = prevState.posts.findIndex(p => p.id === prevState.editPost._id)
+            updatedPosts[postIndex] = post
+          } else {
+            updatedPosts.unshift(post)
+          }
           return {
+            posts: updatedPosts,
             isEditing: false,
             editPost: null,
             editLoading: false
