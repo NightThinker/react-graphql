@@ -260,7 +260,9 @@ class Feed extends Component {
             const postIndex = prevState.posts.findIndex(p => p.id === prevState.editPost._id)
             updatedPosts[postIndex] = post
           } else {
-            updatedPosts.pop()
+            if (prevState.posts.length >= 2) {
+              updatedPosts.pop();
+            }
             updatedPosts.unshift(post)
           }
           return {
