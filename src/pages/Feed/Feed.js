@@ -66,6 +66,7 @@ class Feed extends Component {
               _id
               title
               content
+              imageUrl
               creator {
                 name
               }
@@ -78,17 +79,17 @@ class Feed extends Component {
     }
     fetch('http://localhost:8080/graphql', {
       method: 'POST',
-      body: JSON.stringify(graphqlQuery),
       headers: {
         Authorization: 'Bearer ' + this.props.token,
         'Content-Type': 'application/json'
-      }
+      },
+      body: JSON.stringify(graphqlQuery)
     })
       .then(res => {
         return res.json();
       })
       .then(resData => {
-				console.log('TCL: Feed -> resData', resData)
+				console.log('TCL: Post -> resData', resData)
         if (resData.errors) {
           throw new Error(
             "Fetching posts failed!"
@@ -96,6 +97,7 @@ class Feed extends Component {
         }
         this.setState({
           posts: resData.data.posts.posts.map(post => {
+						console.log('TCL: Feed -> post', post)
             return {
               ...post,
               imagePath: post.imageUrl
@@ -169,7 +171,9 @@ class Feed extends Component {
     })
     .then(res => res.json())
     .then(fileResData => {
+			console.log('TCL: fileResData', fileResData)
       const imageUrl = fileResData.filePath
+			console.log('TCL: imageUrl', imageUrl)
       let graphqlQuery = {
         query: `
           mutation {
